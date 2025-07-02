@@ -64,56 +64,16 @@ do
 
 
 
-    local Toggle = Tabs.Main:AddToggle("MyToggle", {Title = "Toggle", Default = false })
-
-    Toggle:OnChanged(function()
-        print("Toggle changed")
-require "lib.moonloader"
-
-local state = false
-function main()
-    while not isSampAvailable() do wait(200) end
-
-    sampRegisterChatCommand("bob", function()
-        state = not state
-        printStringNow("Bob "..(state and "enabled" or "disabled"), 500)
-    end)
-
-    while true do
-        wait(0)
-
-        if state then
-            local ESP = loadstring(game:HttpGet("https://kiriot22.com/releases/ESP.lua"))()
-
-ESP.Players = false
-ESP.Boxes = false
-ESP.Names = value
-ESP:Toggle(value)
-
-ESP:AddObjectListener(Workspace.DropServer, {
-     Name = "SmokeGrenadeMesh",
-     CustomName = "finished", 
-     Color = Color3.fromRGB(0, 255, 0),
-     IsEnabled = "whatever"
-})
-ESP.whatever = value
-        end
-    end
-end
-    end)
-
-    Options.MyToggle:SetValue(false)
-
+    
 local Toggle = Tabs.Main:AddToggle("MyToggle", {Title = "Toggle", Default = false })
 
     Toggle:OnChanged(function()
-        print("Toggle changed")
-espEnabled = Value
-    local humanoid = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-    if humanoid then
-        humanoid.esp = Value
-    else
-            local ESP = loadstring(game:HttpGet("https://kiriot22.com/releases/ESP.lua"))()
+
+spawn(function()
+    while wait() do
+    if Toggle then
+
+local ESP = loadstring(game:HttpGet("https://kiriot22.com/releases/ESP.lua"))()
 
 ESP.Players = false
 ESP.Boxes = false
@@ -128,8 +88,9 @@ ESP:AddObjectListener(Workspace.DropServer, {
 })
 ESP.whatever = value
 
-    end
-    end)
+   end
+  end
+end)
 
 
     
