@@ -405,33 +405,3 @@ local Library =
             end
         )
 
-        local InfStamina = Tabs.Player:CreateToggle("InfStamina", {Title = "Inf Stamina", Default = false})
-
-        InfStamina:OnChanged(
-            function()
-                if Options.InfStamina.Value then
-                    while Options.InfStamina.Value do
-                        pcall(
-                            function()
-                                if
-                                    plr:WaitForChild("PlayerGui"):FindFirstChild("Modules"):FindFirstChild("Gameplay"):WaitForChild(
-                                        "Sprint"
-                                    )
-                                then
-                                    plr:WaitForChild("PlayerGui"):FindFirstChild("Modules"):FindFirstChild("Gameplay"):WaitForChild(
-                                            "Sprint"
-                                        ):FindFirstChild("Stamina").Value = 9e9
-                                end
-                            end
-                        )
-                        wait(.6)
-                    end
-                else
-                    if plr:WaitForChild("PlayerGui"):FindFirstChild("Modules"):FindFirstChild("Gameplay"):WaitForChild("Sprint") then
-                        plr:WaitForChild("PlayerGui"):FindFirstChild("Modules"):FindFirstChild("Gameplay"):WaitForChild(
-                                "Sprint"
-                            ):FindFirstChild("Stamina").Value = 6
-                    end
-                end
-            end
-        )
