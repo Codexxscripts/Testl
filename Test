@@ -1,48 +1,365 @@
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
-local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
-local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
+local Library =
+        loadstring(
+        game:HttpGetAsync("https://github.com/ActualMasterOogway/Fluent-Renewed/releases/latest/download/Fluent.luau")
+    )()
+    local SaveManager =
+        loadstring(
+        game:HttpGetAsync(
+            "https://raw.githubusercontent.com/ActualMasterOogway/Fluent-Renewed/master/Addons/SaveManager.luau"
+        )
+    )()
+    local InterfaceManager =
+        loadstring(
+        game:HttpGetAsync(
+            "https://raw.githubusercontent.com/ActualMasterOogway/Fluent-Renewed/master/Addons/InterfaceManager.luau"
+        )
+    )()
+    local Window =
+        Library:CreateWindow {
+        Title = "Be NPC or Die",
+        SubTitle = "by Bac0nH1ckOff | t.me/arceusxscripts",
+        TabWidth = 160,
+        Size = UDim2.fromOffset(830, 525),
+        Resize = true,
+        MinSize = Vector2.new(470, 380),
+        Acrylic = true,
+        Theme = "Dark",
+        MinimizeKey = Enum.KeyCode.LeftControl
+    }
 
-local Window = Fluent:CreateWindow({
-    Title = "Fluent " .. Fluent.Version,
-    SubTitle = "by dawid",
-    TabWidth = 160,
-    Size = UDim2.fromOffset(580, 460),
-    Acrylic = true, -- The blur may be detectable, setting this to false disables blur entirely
-    Theme = "Dark",
-    MinimizeKey = Enum.KeyCode.LeftControl -- Used when theres no MinimizeKeybind
-})
+    local players = game:GetService("Players")
+    local plr = players.LocalPlayer
 
---Fluent provides Lucide Icons https://lucide.dev/icons/ for the tabs, icons are optional
-local Tabs = {
-    Main = Window:AddTab({ Title = "Main", Icon = "" }),
-    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
-}
+    local function getCharacter()
+        local char = plr.Character or plr.CharacterAdded:Wait()
+        local humPart = char:WaitForChild("HumanoidRootPart", 5)
+        return char, humPart
+    end
 
-local Options = Fluent.Options
+    local char, humPart = getCharacter()
 
-do
-    Fluent:Notify({
-        Title = "Notification",
-        Content = "This is a notification",
-        SubContent = "SubContent", -- Optional
-        Duration = 5 -- Set to nil to make the notification not disappear
-    })
+    plr.CharacterAdded:Connect(
+        function()
+            char, humPart = getCharacter()
+            char:WaitForChild("Humanoid").UseJumpPower = true
+        end
+    )
 
+    local TeleportService = game:GetService("TeleportService")
+    local HttpService = game:GetService("HttpService")
+    local queueteleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
+    local Lighting = game:GetService("Lighting")
 
+    if queueteleport then
+        local TeleportCheck = false
+        plr.OnTeleport:Connect(function(State)
+            if queueteleport and (not TeleportCheck) then
+                TeleportCheck = true
+                queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/Bac0nHck/Scripts/refs/heads/main/BeNpcOrDie'))()")
+            end
+        end)
+    end
 
-    Tabs.Main:AddParagraph({
-        Title = "Paragraph",
-        Content = "This is a paragraph.\nSecond line!"
-    })
+    if game.PlaceId == 11276071411 then
+        local Tabs = {
+            Main = Window:CreateTab {
+                Title = "Main",
+                Icon = "house"
+            },
+            Farm = Window:CreateTab {
+                Title = "Farm",
+                Icon = "circle-dollar-sign"
+            },
+            Player = Window:CreateTab {
+                Title = "Player",
+                Icon = "person-standing"
+            },
+            Stats = Window:CreateTab {
+                Title = "Players Stats",
+                Icon = "chart-no-axes-column"
+            },
+            Settings = Window:CreateTab {
+                Title = "Settings",
+                Icon = "settings"
+            }
+        }
+        local Options = Library.Options
 
+        local collect = workspace:FindFirstChild("CollectableItems")
 
+        local function serverHop()
+            local servers = {}
+            local req = request({
+                Url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true",
+                Method = "GET"
+            })
+        
+            if req.StatusCode == 200 then
+                local body = HttpService:JSONDecode(req.Body)
+                if body and body.data then
+                    for _, server in ipairs(body.data) do
+                        if server.playing < server.maxPlayers and server.id ~= game.JobId then
+                            table.insert(servers, server.id)
+                        end
+                    end
+                end
+            else
+                warn("Failed to fetch server list: " .. req.StatusMessage)
+            end
+        
+            if #servers > 0 then
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, servers[math.random(1, #servers)], plr)
+            else
+                warn("No suitable servers found")
+            end
+        end
 
-local Toggle = Tabs.Main:AddToggle("MyToggle", {Title = "Toggle", Default = false })
+        local farmToggle = Tabs.Farm:CreateToggle("farmToggle", {Title = "Cash Farm", Default = false})
 
-    Toggle:OnChanged(function()
+        farmToggle:OnChanged(function ()
+            while Options.farmToggle.Value do
+                pcall(function ()
+                    for _, p in ipairs(collect:GetChildren()) do
+                        if not Options.farmToggle.Value then break end
+                        if not p:GetAttribute("CannotSee") then
+                            humPart.CFrame = p.CFrame
+                            wait(.5)
+                            local humanoid = char:FindFirstChildWhichIsA("Humanoid")
+                            if humanoid then humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end
+                        end
+                        wait(1)
+                    end
+                end)
+                wait(.5)
+            end
+        end)
+
+        local resetParagraph = Tabs.Farm:CreateParagraph("Reset", {
+            Title = "Auto Reset:",
+            Content = ""
+        })
+        
+        local full = Tabs.Farm:CreateToggle("full", { Title = "Reset if the Bag is Full", Default = false })
+        local sheriff  = Tabs.Farm:CreateToggle("sheriff", { Title = "Reset if You are a Sheriff", Default = false })
+        
+        full:OnChanged(function ()
+            local bag = plr.PlayerGui:WaitForChild("Timer"):WaitForChild("Frame"):WaitForChild("Bags"):WaitForChild("CashBag"):WaitForChild("Bag"):WaitForChild("AmountCollected")
+            while Options.full.Value do
+                if bag and Options.farmToggle.Value then
+                    if bag.Text == "FULL!" and plr.Team and plr.Team.Name == "Criminals" then
+                        local humanoid = char:FindFirstChildWhichIsA("Humanoid")
+                        if humanoid then humanoid.Health = 0 end
+                    end
+                end
+                wait(1)
+            end
+        end)
+
+        sheriff:OnChanged(function ()
+            while Options.sheriff.Value do
+                if plr.Team and plr.Team.Name == "Sheriffs" and Options.farmToggle.Value then
+                    local humanoid = char:FindFirstChildWhichIsA("Humanoid")
+                    if humanoid then humanoid.Health = 0 end
+                end
+                wait(1)
+            end
+        end)
+
+        local resetParagraph = Tabs.Farm:CreateParagraph("Reset", {
+            Title = "Server Hop:",
+            Content = ""
+        })
+
+        Tabs.Farm:CreateButton{
+            Title = "Server Hop",
+            Description = "",
+            Callback = function()
+                Window:Dialog{
+                    Title = "Server Hop",
+                    Content = "Do you want to server hop?",
+                    Buttons = {
+                        {
+                            Title = "Confirm",
+                            Callback = function()
+                                serverHop()
+                            end
+                        },
+                        {
+                            Title = "Cancel",
+                            Callback = function() end
+                        }
+                    }
+                }
+            end
+        }
+
+        local serverHopToggle = Tabs.Farm:CreateToggle("serverHopToggle", {Title = "Auto Server Hop", Default = false})
+
+        serverHopToggle:OnChanged(function ()
+            while Options.serverHopToggle.Value do
+                if #players:GetPlayers() <= 3 then
+                    serverHop()
+                end
+                wait(1)
+            end
+        end)
+        local hopParagraph = Tabs.Farm:CreateParagraph("AutoHop", {
+            Title = "^ If there are less than 3 players on the server",
+            Content = ""
+        })
+
+        local bb = game:GetService("VirtualUser")
+        plr.Idled:connect(function()
+            bb:CaptureController()
+            bb:ClickButton2(Vector2.new())
+        end)
+
+        local function instask()
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v.ClassName == "ProximityPrompt" and v.HoldDuration ~= 0 then
+                    v.HoldDuration = 0
+                end
+            end
+        end
+
+        local taskName = nil
+
+        local ToggleESP = Tabs.Main:CreateToggle("ToggleESP", {Title = "ESP", Default = false})
+        local AutoObby = Tabs.Main:CreateToggle("AutoObby", {Title = "Auto Complete Obby", Default = false})
+        local AutoTask2 = Tabs.Main:CreateToggle("AutoTask2", {Title = "Auto Task", Default = false})
+        local AutoTask = Tabs.Main:CreateToggle("AutoTask", {Title = "Auto Nearest Task", Default = false})
+
+        AutoTask2:OnChanged(
             function()
-                if Options.Toggle.Value then
-                    while Options.Toggle.Value do
+                while Options.AutoTask2.Value do
+                    pcall(
+                        function()
+                            taskName = char:GetAttribute("TaskName")
+                            if taskName and taskName ~= "" then
+                                local yourTask
+                                local parentTask
+                                for _, task in pairs(workspace:GetDescendants()) do
+                                    if task:IsA("ProximityPrompt") and task.Parent and task.Parent.Name == taskName then
+                                        yourTask = task
+                                        parentTask = task.Parent
+                                        break
+                                    end
+                                end
+
+                                if yourTask then
+                                    yourTask.Parent = char
+                                    yourTask.HoldDuration = 0
+
+                                    while Options.AutoTask2.Value and char:GetAttribute("TaskName") == taskName do
+                                        yourTask:InputHoldBegin()
+                                        yourTask:InputHoldEnd()
+                                        wait(0.1)
+                                    end
+
+                                    if yourTask.Parent == char then
+                                        yourTask.Parent = parentTask
+                                    end
+                                end
+                            end
+                        end
+                    )
+
+                    wait(1)
+                end
+            end
+        )
+
+        Tabs.Main:CreateButton {
+            Title = "Kill Nearest NPCs",
+            Description = "",
+            Callback = function ()
+                for i, v in ipairs(players:GetPlayers()) do
+                    if v == plr then
+                        Instance.new("Folder", v.Character).Name = "testt"
+                    end
+                end
+                task.wait(.5)
+                for i, v in ipairs(workspace:GetChildren()) do
+                    if v:FindFirstChild("testt") == nil and v:FindFirstChild("Died") == nil and v:FindFirstChild("Humanoid") then
+                        Magnitude =
+                            (plr.Character.HumanoidRootPart.Position - v.HumanoidRootPart.Position).Magnitude
+                        if Magnitude <= 50 then
+                            v.Humanoid.RigType = "R6"
+                            v.Humanoid.Health = 0
+                            Instance.new("Folder", v).Name = "Died"
+                        end
+                    end
+                end
+            end
+        }
+
+        Tabs.Main:CreateButton {
+            Title = "Instance Tasks",
+            Description = "",
+            Callback = function()
+                instask()
+            end
+        }
+        local InstanceTask = Tabs.Main:CreateToggle("InstanceTask", {Title = "Auto Instance Task", Default = false})
+        InstanceTask:OnChanged(
+            function()
+                while Options.InstanceTask.Value do
+                    instask()
+                    wait(1)
+                end
+            end
+        )
+
+        AutoTask:OnChanged(
+            function()
+                while Options.AutoTask.Value do
+                    local taskName = char:GetAttribute("TaskName")
+                    for _, task in pairs(game:GetService("Workspace"):GetDescendants()) do
+                        if task:IsA("Model") and task.Name == taskName and task.Parent.Name == "Tasks" then
+                            local hitbox = task:WaitForChild("Hitbox")
+                            local distance = (humPart.Position - hitbox.Position).Magnitude
+                            if distance <= task.ProximityPrompt.MaxActivationDistance then
+                                local prompt = task.ProximityPrompt
+                                prompt.HoldDuration = 0
+                                prompt:InputHoldBegin()
+                                wait(prompt.HoldDuration)
+                                prompt:InputHoldEnd()
+                            end
+                        end
+                    end
+                    wait(.3)
+                end
+            end
+        )
+
+        AutoObby:OnChanged(
+            function()
+                while Options.ToggleESP.Value do
+                    pcall(
+                        function()
+                            if plr and plr.Team and plr.Team.Name == "Lobby" then
+                                firetouchinterest(
+                                    plr.Character.HumanoidRootPart,
+                                    workspace:FindFirstChild("Lobby"):FindFirstChild("Obby"):FindFirstChild("ObbyEndPart"),
+                                    0
+                                )
+                                firetouchinterest(
+                                    plr.Character.HumanoidRootPart,
+                                    workspace:FindFirstChild("Lobby"):FindFirstChild("Obby"):FindFirstChild("ObbyEndPart"),
+                                    1
+                                )
+                            end
+                        end
+                    )
+                    wait(1)
+                end
+            end
+        )
+
+        ToggleESP:OnChanged(
+            function()
+                if Options.ToggleESP.Value then
+                    while Options.ToggleESP.Value do
                         for _, player in pairs(workspace:GetDescendants()) do
                             if player:IsA("Model") and player:FindFirstChild("HumanoidRootPart") then
                                 if player:FindFirstChild("HumanoidRootPart").CollisionGroup == "Player" and player ~= char then
@@ -83,6 +400,37 @@ local Toggle = Tabs.Main:AddToggle("MyToggle", {Title = "Toggle", Default = fals
                         if e.Name == "ESP" then
                             e:Destroy()
                         end
+                    end
+                end
+            end
+        )
+
+        local InfStamina = Tabs.Player:CreateToggle("InfStamina", {Title = "Inf Stamina", Default = false})
+
+        InfStamina:OnChanged(
+            function()
+                if Options.InfStamina.Value then
+                    while Options.InfStamina.Value do
+                        pcall(
+                            function()
+                                if
+                                    plr:WaitForChild("PlayerGui"):FindFirstChild("Modules"):FindFirstChild("Gameplay"):WaitForChild(
+                                        "Sprint"
+                                    )
+                                then
+                                    plr:WaitForChild("PlayerGui"):FindFirstChild("Modules"):FindFirstChild("Gameplay"):WaitForChild(
+                                            "Sprint"
+                                        ):FindFirstChild("Stamina").Value = 9e9
+                                end
+                            end
+                        )
+                        wait(.6)
+                    end
+                else
+                    if plr:WaitForChild("PlayerGui"):FindFirstChild("Modules"):FindFirstChild("Gameplay"):WaitForChild("Sprint") then
+                        plr:WaitForChild("PlayerGui"):FindFirstChild("Modules"):FindFirstChild("Gameplay"):WaitForChild(
+                                "Sprint"
+                            ):FindFirstChild("Stamina").Value = 6
                     end
                 end
             end
